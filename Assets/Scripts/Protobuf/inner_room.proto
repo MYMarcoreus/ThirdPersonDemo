@@ -1,0 +1,42 @@
+syntax = "proto3";
+package yy.protocol.app;
+option cc_generic_services = true;
+import "room_data.proto";
+
+/* **************** 内部RPC消息 **************** */
+message NewRoomReq {
+    RoomDetailData room_data = 1;
+}
+
+message NewRoomRsp{
+     bool sucess = 1;
+     uint64 room_id = 2;
+}
+
+message DeleteRoomReq {
+     uint64 room_id = 1;
+}
+
+message DeleteRoomRsp {
+     bool sucess = 1;
+     uint64 room_id = 2;
+}
+
+message NotifyEnterSceneTokenReq {
+    uint64 uid = 1;
+    string user_token = 3;
+    uint64 room_id = 2;
+    string scene_token = 4;
+}
+message NotifyEnterSceneTokenRsp {
+     bool   sucess = 1;
+     uint64 uid = 2;
+     uint64 room_id = 3;
+}
+
+service LogicRoomServiceRpc
+{
+    rpc NewRoom(NewRoomReq) returns(NewRoomRsp);
+    rpc DeleteRoom(DeleteRoomReq) returns(DeleteRoomRsp);
+    rpc NotifyEnterSceneToken(NotifyEnterSceneTokenReq) returns(NotifyEnterSceneTokenRsp);
+}

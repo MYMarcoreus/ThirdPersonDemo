@@ -1,0 +1,158 @@
+syntax = "proto3";
+package yy.protocol.app;
+option cc_generic_services = true;
+import "room_data.proto";
+import "account_data.proto";
+import "msg_cmd.proto";
+
+
+/************************************** Client <-> Gate Server <-> Center Server ***************************************/
+// Client <-> CenterServer <-> LogicServer
+message CreateRoomReq {
+    AccountBaseData owner_data = 1;
+    string          user_token = 2;
+    string          name = 3;
+    uint32          capacity = 6;
+}
+message CreateRoomRsp {
+    enum Status {
+        eSuccess = 0;
+        eNoServer = 1;
+        eUnknownError = 2;
+    }
+    uint64          uid = 1;
+    Status          result_code = 2;
+    RoomDetailData  room_data = 3;
+    string          room_ip = 4;
+    uint32          room_port = 5;
+}
+
+//! 客户端请求所有房间的信息（不包含房间地址信息）
+// Client <-> CenterServer
+message SearchRoomReq {
+    uint64 uid = 1;
+    string user_token = 3;
+    //todo 过滤条件
+}
+message SearchRoomRsp {
+    uint64                  uid = 1;
+    repeated RoomDetailData room_datas = 2;
+}
+
+//! 客户端加入房间
+// Client <-> CenterServer
+message SelfJoinRoomReq {
+    AccountBaseData joinner_data = 1;
+    string          user_token = 2;
+    uint64          room_id = 3;
+}
+message SelfJoinRoomRsp {
+    enum Status {
+        eSuccess = 0;
+        eRoomNotExist = 1;
+        eRoomFull = 2;
+        eAlreadyJoined = 3;
+        eUnknownError = 4;
+    }
+
+    uint64          uid = 1;
+    Status          result_code = 2;
+    RoomDetailData  room_data = 3;
+    string          room_ip = 4;
+    uint32          room_port = 5;
+}
+message OtherJoinRoomRsp {
+    enum Status {
+        eSuccess = 0;
+        eRoomNotExist = 1;
+        eUnknownError = 2;
+    }
+
+    AccountBaseData joinner_data = 3;
+    Status          result_code = 2;
+}
+
+
+message SelfQuitRoomReq {
+    uint64 uid = 1;
+    string user_token = 3;
+    uint64 room_id = 2;
+}
+message SelfQuitRoomRsp {
+    enum Status {
+        eSuccess = 0;
+        eRoomNotExist = 1;
+        eUnknownError = 2;
+    }
+
+    uint64 uid = 1;
+    uint64 room_id = 2;
+    Status result_code = 3;
+}
+message OtherQuitRoomRsp {
+    enum Status {
+        eSuccess = 0;
+        eRoomNotExist = 1;
+        eUnknownError = 2;
+    }
+
+    uint64 uid = 1;
+    uint64 room_id = 2;
+    Status result_code = 3;
+}
+
+
+//! 客户端点击“进入”后，首先向CenterServer获取房间场景token，之后带着这个场景token连接LogicServer
+message GetEnterSceneTokenReq {
+    uint64 uid = 1;
+    string user_token = 3;
+    uint64 room_id = 2;
+}
+message GetEnterSceneTokenRsp {
+    enum Status {
+        eSuccess = 0;
+        eRoomNotExist = 1;
+        eUnknownError = 2;
+    }
+
+    uint64      uid = 1;
+    Status      result_code = 2;
+    uint64      room_id = 3;
+    string      scene_token = 4;
+}
+
+message BroadcastRoomReq {
+    uint64 room_id = 1;
+    repeated uint64 target_uids = 2;
+    MessageCommand msg_cmd = 3; // payload的消息类型
+    bytes payload = 4;
+}
+message BroadcastRoomRsp {
+    uint64 room_id = 1;
+    repeated uint64 failed_uids = 2;
+    MessageCommand msg_cmd = 3;
+    bool success = 4;
+}
+
+message UserDisconnectReq {
+    uint64 uid = 1;
+}
+message UserDisconnectRsp {
+    uint64 uid = 1;
+}
+
+//! CenterServer
+service CenterRoomServiceRpc
+{
+    rpc CreateRoom(CreateRoomReq) returns(CreateRoomRsp);
+    rpc SearchRoom(SearchRoomReq) returns(SearchRoomRsp);
+    rpc SelfJoinRoom(SelfJoinRoomReq) returns(SelfJoinRoomRsp);
+    rpc GetEnterSceneToken(GetEnterSceneTokenReq) returns(GetEnterSceneTokenRsp);
+    rpc SelfQuitRoom(SelfQuitRoomReq) returns(SelfQuitRoomRsp);
+    rpc UserDisconnect(UserDisconnectReq) returns(UserDisconnectRsp);
+}
+
+service GateRoomServiceRpc
+{
+    rpc BroadcastRoom(BroadcastRoomReq) returns(BroadcastRoomRsp);
+}

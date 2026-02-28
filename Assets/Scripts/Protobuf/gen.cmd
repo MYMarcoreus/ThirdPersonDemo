@@ -1,0 +1,1 @@
+protoc.exe --csharp_opt=file_extension=.pb.cs --csharp_out=. --proto_path=. *.proto
